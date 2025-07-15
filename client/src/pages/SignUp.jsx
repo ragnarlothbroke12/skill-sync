@@ -1,22 +1,52 @@
-import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useState,} from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, } from "framer-motion";
+import { TextInput, Alert, Spinner } from "flowbite-react";
 
 export default function SignUp() {
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm();
 
-  const onSubmit = (data) => {
-    console.log("Form Data:", data);
-    alert("Sign up successful! (Just a demo)");
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null); 
+  const navigate = useNavigate();
+
+   const handleChange = (e)=>{
+    setFormData({
+      ...formData,[e.target.id]: e.target.value
+    });
   };
 
-  const password = watch("password", "");
+ // console.log(formData);
+  
 
+  const handleSubmit = async (e)=> {
+    e.preventDefault();
+    if(!formData.username || !formData.email || !formData.password){
+      return setErrorMessage('Please fill out all field.');
+    }
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      const res = await fetch('/api/auth/signup',{
+        method: 'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(formData),
+      });
+    const data = await res.json();
+    if(data.success === false){
+      return setErrorMessage(data.message);
+    }
+    setLoading(false);
+    if (res.ok){
+      navigate('/sign-in');
+    }
+   } catch (error) {
+      setErrorMessage(error.message);
+      setLoading(false);
+    }
+ };
+
+  
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-gradient-to-r from-gray-800 to-gray-900 text-white">
       {/* Left Side */}
@@ -51,80 +81,23 @@ export default function SignUp() {
             Sign Up
           </h2>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name */}
             <div>
               <label className="block mb-1 font-medium">Name</label>
-              <input
-                type="text"
-                {...register("name", { required: "Name is required" })}
-                className={`w-full px-4 py-2 rounded border focus:outline-none bg-gray-700 text-white ${
-                  errors.name ? "border-red-500" : "border-gray-600"
-                }`}
-                placeholder="Your full name"
-              />
-              {errors.name && <p className="text-red-400 mt-1 text-sm">{errors.name.message}</p>}
+              <TextInput type="text" placeholder="Username" id="username" onChange={handleChange}/>
             </div>
 
             {/* Email */}
             <div>
               <label className="block mb-1 font-medium">Email</label>
-              <input
-                type="email"
-                {...register("email", {
-                  required: "Email is required",
-                  pattern: {
-                    value: /^\S+@\S+$/i,
-                    message: "Invalid email address",
-                  },
-                })}
-                className={`w-full px-4 py-2 rounded border focus:outline-none bg-gray-700 text-white ${
-                  errors.email ? "border-red-500" : "border-gray-600"
-                }`}
-                placeholder="your@example.com"
-              />
-              {errors.email && <p className="text-red-400 mt-1 text-sm">{errors.email.message}</p>}
+              <TextInput type="text" placeholder="name@company.com" id="email" onChange={handleChange}/>
             </div>
 
             {/* Password */}
             <div>
               <label className="block mb-1 font-medium">Password</label>
-              <input
-                type="password"
-                {...register("password", { required: "Password is required", minLength: 6 })}
-                className={`w-full px-4 py-2 rounded border focus:outline-none bg-gray-700 text-white ${
-                  errors.password ? "border-red-500" : "border-gray-600"
-                }`}
-                placeholder="Enter password"
-              />
-              {errors.password && (
-                <p className="text-red-400 mt-1 text-sm">
-                  {errors.password.type === "minLength"
-                    ? "Password must be at least 6 characters"
-                    : errors.password.message}
-                </p>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label className="block mb-1 font-medium">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                {...register("confirmPassword", {
-                  required: "Confirm Password is required",
-                  validate: (value) => value === password || "Passwords do not match",
-                })}
-                className={`w-full px-4 py-2 rounded border focus:outline-none bg-gray-700 text-white ${
-                  errors.confirmPassword ? "border-red-500" : "border-gray-600"
-                }`}
-                placeholder="Confirm password"
-              />
-              {errors.confirmPassword && (
-                <p className="text-red-400 mt-1 text-sm">{errors.confirmPassword.message}</p>
-              )}
+              <TextInput type="password" placeholder="Password" id="password" onChange={handleChange}/>
             </div>
 
             <motion.button
@@ -132,18 +105,32 @@ export default function SignUp() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-2 rounded-lg transition duration-300 shadow-md"
-            >
-              Sign Up
+              disabled={loading}
+            >{
+            loading ? (
+              <>
+              <Spinner size='sm'/> 
+              <span className="pl-3">Loading...</span>
+              </>
+            ) : 'Sign Up'
+            }     
             </motion.button>
-
-            <p className="text-sm text-center text-gray-300">
+          </form>
+            <p className="text-sm mt-2 text-center text-gray-300">
               Already have an account?{' '}
               <Link to="/sign-in" className="text-blue-400 hover:underline">
                 Log In
               </Link>
             </p>
-          </form>
+        
         </div>
+        {
+          errorMessage && (
+            <Alert className="mt-5" color='failure'>
+              {errorMessage}
+            </Alert>
+          )
+        }
       </motion.div>
     </div>
   );

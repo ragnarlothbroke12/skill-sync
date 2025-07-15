@@ -13,7 +13,7 @@ export default function Header() {
             Sync
        </Link>
        <div className="flex items-center space-x-8">
-       <Link to='/' className="font-bold " pill>Home</Link>
+       <Link to='/' className="font-bold " pill='true'>Home</Link>
        <Link to='/about' className="font-bold">About</Link>
        </div>
        <div className="flex items-center space-x-8">
@@ -21,7 +21,7 @@ export default function Header() {
            <FaMoon />
         </Button>
         <Link to='/sign-in'>
-         <Button gradientDuoTone='purpleToBlue' outline pill>Sign In</Button>   
+         <Button color="purple" outline pill='true'> Sign In</Button>   
         </Link>
         </div>
         </div>
