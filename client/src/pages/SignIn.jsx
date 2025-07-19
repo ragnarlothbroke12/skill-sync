@@ -1,17 +1,44 @@
-import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { TextInput, Alert, Spinner } from "flowbite-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-export default function Login() {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+export default function SignIn() {
+  const [formData, setFormData] = useState({});
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const onSubmit = (data) => {
-    console.log("Login Data:", data);
-    alert("Login successful! (This is a demo)");
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.email || !formData.password) {
+      return setErrorMessage("Please fill out all field.");
+    }
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      const res = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (data.success === false) {
+        return setErrorMessage(data.message);
+      }
+      setLoading(false);
+      if (res.ok) {
+        navigate("/");
+      }
+    } catch (error) {
+      setErrorMessage(error.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,7 +59,8 @@ export default function Login() {
           Welcome Back to SkillSync
         </h1>
         <p className="text-gray-300 text-center max-w-sm">
-          Log in to manage projects, collaborate with your team, and track your progress.
+          Log in to manage projects, collaborate with your team, and track your
+          progress.
         </p>
       </motion.div>
 
@@ -46,57 +74,61 @@ export default function Login() {
         <div className="max-w-md w-full bg-gray-800 rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-bold mb-6 text-center">Log In</h2>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
             <div>
-              <label className="block mb-1 font-medium">Email</label>
-              <input
+              <label htmlFor="email" className="block mb-1 font-medium">
+                Email
+              </label>
+              <TextInput
                 type="email"
-                {...register("email", {
-                  required: "Email is required",
-                  pattern: {
-                    value: /^\S+@\S+$/i,
-                    message: "Invalid email address",
-                  },
-                })}
-                className={`w-full px-4 py-2 rounded border focus:outline-none bg-gray-700 text-white ${
-                  errors.email ? "border-red-500" : "border-gray-600"
-                }`}
-                placeholder="your@example.com"
+                placeholder="name@company.com"
+                id="email"
+                onChange={handleChange}
               />
-              {errors.email && <p className="text-red-400 mt-1 text-sm">{errors.email.message}</p>}
             </div>
 
             {/* Password */}
             <div>
-              <label className="block mb-1 font-medium">Password</label>
-              <input
+              <label htmlFor="password" className="block mb-1 font-medium">
+                Password
+              </label>
+              <TextInput
                 type="password"
-                {...register("password", { required: "Password is required" })}
-                className={`w-full px-4 py-2 rounded border focus:outline-none bg-gray-700 text-white ${
-                  errors.password ? "border-red-500" : "border-gray-600"
-                }`}
-                placeholder="Enter password"
+                placeholder="***********"
+                id="password"
+                onChange={handleChange}
               />
-              {errors.password && <p className="text-red-400 mt-1 text-sm">{errors.password.message}</p>}
             </div>
-
             <motion.button
               type="submit"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold py-2 rounded-lg transition duration-300 shadow-md"
+              className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-2 rounded-lg transition duration-300 shadow-md"
+              disabled={loading}
             >
-              Log In
+              {loading ? (
+                <>
+                  <Spinner size="sm" />
+                  <span className="pl-3">Loading...</span>
+                </>
+              ) : (
+                "Sign In"
+              )}
             </motion.button>
-
-            <p className="text-sm text-center text-gray-300">
-              Don't have an account?{' '}
-              <Link to="/sign-up" className="text-blue-400 hover:underline">
-                Sign Up
-              </Link>
-            </p>
           </form>
+
+          <p className="text-sm text-center text-gray-300">
+            Don't have an account?{" "}
+            <Link to="/sign-up" className="text-blue-400 hover:underline">
+              Sign Up
+            </Link>
+          </p>
+          {errorMessage && (
+            <Alert className="mt-5" color="failure">
+              {errorMessage}
+            </Alert>
+          )}
         </div>
       </motion.div>
     </div>
